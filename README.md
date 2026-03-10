@@ -35,7 +35,7 @@ solved.ac 프로필의 **AC RATING**과 **스트릭** 섹션을 자동으로 캡
 
 | 생성 이미지 |
 |---|
-| ![예시](docs/example.png) |
+| ![예시](docs/example.png?raw=true) |
 
 ---
 
