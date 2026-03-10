@@ -1,0 +1,42 @@
+name: Build Windows .exe
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # v1.0.0 같은 태그를 push하면 자동으로 Release + .exe 생성
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build .exe with PyInstaller
+        run: pyinstaller captureSolvedAC.spec --clean --noconfirm
+
+      - name: Create GitHub Release and upload .exe
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## captureSolvedAC ${{ github.ref_name }}
+
+            ### 다운로드
+            아래 `captureSolvedAC.exe`를 다운로드해서 더블클릭으로 실행하세요.
+
+            > 처음 실행 시 Chromium 브라우저 자동 설치 (~150MB, 한 번만 필요)
+          files: dist/captureSolvedAC.exe
+          draft: false
+          prerelease: false
