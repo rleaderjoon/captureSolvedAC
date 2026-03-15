@@ -1,8 +1,9 @@
 """
 Entry point for captureSolvedAC.
 
-On first launch, checks whether Playwright Chromium is installed.
-If not, shows an install dialog then downloads it (~100MB, one-time).
+On first launch, checks whether Chrome or Playwright Chromium is installed.
+If Chrome is found, uses it directly (no download needed).
+If not, shows an install dialog then downloads Chromium (~100MB, one-time).
 Then launches the main GUI.
 """
 import os
@@ -12,6 +13,16 @@ import sys
 import threading
 import tkinter as tk
 from tkinter import messagebox
+
+
+def _find_chrome() -> bool:
+    """Check if Google Chrome is installed on this system."""
+    candidates = [
+        pathlib.Path(os.environ.get("PROGRAMFILES", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+        pathlib.Path(os.environ.get("PROGRAMFILES(X86)", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+        pathlib.Path(os.environ.get("LOCALAPPDATA", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+    ]
+    return any(p.exists() for p in candidates)
 
 
 def _find_chromium() -> bool:
@@ -119,8 +130,8 @@ def _show_install_ui() -> bool:
 
 
 def main():
-    # 1. Ensure Chromium is available
-    if not _find_chromium():
+    # 1. Ensure a browser is available (Chrome preferred, else Playwright Chromium)
+    if not _find_chrome() and not _find_chromium():
         installed = _show_install_ui()
         if not installed:
             sys.exit(0)

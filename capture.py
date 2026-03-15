@@ -96,7 +96,10 @@ async def capture_sections(
 
     async with async_playwright() as p:
         status("브라우저 시작 중...")
-        browser = await p.chromium.launch(headless=True)
+        try:
+            browser = await p.chromium.launch(channel="chrome", headless=True)
+        except Exception:
+            browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             viewport={"width": VIEWPORT_WIDTH, "height": VIEWPORT_HEIGHT},
             color_scheme="dark",
