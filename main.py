@@ -15,14 +15,18 @@ from tkinter import messagebox
 
 
 def _find_chromium() -> bool:
-    """Check if Playwright's Chromium is already installed."""
+    """Check if Playwright's Chromium executable is installed and accessible."""
     local_app_data = os.environ.get("LOCALAPPDATA", "")
     if not local_app_data:
         return False
     ms_playwright = pathlib.Path(local_app_data) / "ms-playwright"
     if not ms_playwright.exists():
         return False
-    return any(ms_playwright.glob("chromium-*"))
+    for chromium_dir in ms_playwright.glob("chromium-*"):
+        chrome_exe = chromium_dir / "chrome-win" / "chrome.exe"
+        if chrome_exe.exists():
+            return True
+    return False
 
 
 def _install_chromium():
