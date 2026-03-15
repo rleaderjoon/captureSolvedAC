@@ -1,4 +1,5 @@
 import os
+import platform
 import pathlib
 from datetime import datetime
 
@@ -6,7 +7,10 @@ from datetime import datetime
 CAPTURES_DIR = pathlib.Path("captures")
 
 # App config storage
-APP_CONFIG_DIR = pathlib.Path(os.environ.get('APPDATA', os.path.expanduser('~'))) / 'captureSolvedAC'
+if platform.system() == "Darwin":
+    APP_CONFIG_DIR = pathlib.Path.home() / "Library" / "Application Support" / "captureSolvedAC"
+else:
+    APP_CONFIG_DIR = pathlib.Path(os.environ.get('APPDATA', os.path.expanduser('~'))) / 'captureSolvedAC'
 APP_CONFIG_FILE = APP_CONFIG_DIR / 'config.json'
 
 # Browser settings

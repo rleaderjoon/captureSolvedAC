@@ -7,6 +7,7 @@ If not, shows an install dialog then downloads Chromium (~100MB, one-time).
 Then launches the main GUI.
 """
 import os
+import platform
 import pathlib
 import subprocess
 import sys
@@ -17,25 +18,36 @@ from tkinter import messagebox
 
 def _find_chrome() -> bool:
     """Check if Google Chrome is installed on this system."""
-    candidates = [
-        pathlib.Path(os.environ.get("PROGRAMFILES", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
-        pathlib.Path(os.environ.get("PROGRAMFILES(X86)", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
-        pathlib.Path(os.environ.get("LOCALAPPDATA", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
-    ]
+    if platform.system() == "Darwin":
+        candidates = [
+            pathlib.Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+            pathlib.Path.home() / "Applications" / "Google Chrome.app" / "Contents" / "MacOS" / "Google Chrome",
+        ]
+    else:
+        candidates = [
+            pathlib.Path(os.environ.get("PROGRAMFILES", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+            pathlib.Path(os.environ.get("PROGRAMFILES(X86)", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+            pathlib.Path(os.environ.get("LOCALAPPDATA", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+        ]
     return any(p.exists() for p in candidates)
 
 
 def _find_chromium() -> bool:
     """Check if Playwright's Chromium executable is installed and accessible."""
-    local_app_data = os.environ.get("LOCALAPPDATA", "")
-    if not local_app_data:
-        return False
-    ms_playwright = pathlib.Path(local_app_data) / "ms-playwright"
+    if platform.system() == "Darwin":
+        ms_playwright = pathlib.Path.home() / "Library" / "Caches" / "ms-playwright"
+        exe_subpath = pathlib.Path("chrome-mac") / "Chromium.app" / "Contents" / "MacOS" / "Chromium"
+    else:
+        local_app_data = os.environ.get("LOCALAPPDATA", "")
+        if not local_app_data:
+            return False
+        ms_playwright = pathlib.Path(local_app_data) / "ms-playwright"
+        exe_subpath = pathlib.Path("chrome-win") / "chrome.exe"
+
     if not ms_playwright.exists():
         return False
     for chromium_dir in ms_playwright.glob("chromium-*"):
-        chrome_exe = chromium_dir / "chrome-win" / "chrome.exe"
-        if chrome_exe.exists():
+        if (chromium_dir / exe_subpath).exists():
             return True
     return False
 

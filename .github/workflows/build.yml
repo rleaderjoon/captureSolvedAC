@@ -1,12 +1,12 @@
-name: Build Windows .exe
+name: Build Windows .exe and macOS .dmg
 
 on:
   push:
     tags:
-      - 'v*.*.*'   # v1.0.0 같은 태그를 push하면 자동으로 Release + .exe 생성
+      - 'v*.*.*'   # v1.0.0 같은 태그를 push하면 자동으로 Release + 파일 생성
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     permissions:
       contents: write
@@ -28,7 +28,68 @@ jobs:
       - name: Build .exe with PyInstaller
         run: pyinstaller captureSolvedAC.spec --clean --noconfirm
 
-      - name: Create GitHub Release and upload .exe
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: dist/captureSolvedAC.exe
+
+  build-macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build .app with PyInstaller
+        run: pyinstaller captureSolvedAC_mac.spec --clean --noconfirm
+
+      - name: Create DMG
+        run: |
+          hdiutil create \
+            -volname "captureSolvedAC" \
+            -srcfolder dist/captureSolvedAC.app \
+            -ov -format UDZO \
+            dist/captureSolvedAC.dmg
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: dist/captureSolvedAC.dmg
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+          path: dist
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dmg
+          path: dist
+
+      - name: Create GitHub Release and upload files
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
@@ -36,9 +97,16 @@ jobs:
             ## captureSolvedAC ${{ github.ref_name }}
 
             ### 다운로드
-            아래 `captureSolvedAC.exe`를 다운로드해서 더블클릭으로 실행하세요.
 
-            > 처음 실행 시 Chromium 브라우저 자동 설치 (~150MB, 한 번만 필요)
-          files: dist/captureSolvedAC.exe
+            | 플랫폼 | 파일 |
+            |--------|------|
+            | 🪟 Windows | `captureSolvedAC.exe` |
+            | 🍎 macOS | `captureSolvedAC.dmg` |
+
+            > 크롬이 설치된 경우 별도 브라우저 다운로드 불필요
+            > 크롬이 없을 경우 처음 실행 시 Chromium 자동 설치 (~150MB, 한 번만 필요)
+          files: |
+            dist/captureSolvedAC.exe
+            dist/captureSolvedAC.dmg
           draft: false
           prerelease: false
